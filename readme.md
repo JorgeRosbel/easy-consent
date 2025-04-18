@@ -1,0 +1,265 @@
+# Easy Consent (Beta)
+
+A lightweight consent management solution for Google Analytics and related services. This is a beta version and should be used with caution.
+
+## ⚠️ Important Notice
+
+This software is provided "as is" and is currently in beta testing. The author makes no warranties, express or implied, and hereby disclaims all implied warranties, including any warranty of merchantability and warranty of fitness for a particular purpose. The author shall not be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software.
+
+## Features
+
+- Simple integration with Google Analytics
+- Cookie-based consent storage
+- Secure cookie handling with SameSite=Lax and Secure flags
+- Event-based consent updates
+- Default consent state management
+- Automatic Google Analytics initialization
+- Full TypeScript support with type definitions
+
+## TypeScript Support
+
+This package includes full TypeScript support with the following type definitions:
+
+```typescript
+// Consent mode can be either 'granted' or 'denied'
+type Mode = "denied" | "granted"
+
+// Complete consent configuration interface
+interface Config {
+    ad_storage: Mode,
+    analytics_storage: Mode,
+    functionality_storage: Mode,
+    personalization_storage: Mode,
+    ad_user_data: Mode,
+    ad_personalization: Mode,
+    security_storage: Mode
+}
+
+// Type for consent options (keys of Config interface)
+type Options = keyof Config
+```
+
+These types ensure type safety when:
+- Initializing the consent manager
+- Updating consent preferences
+- Handling consent events
+- Working with the consent state
+
+Example usage with TypeScript:
+
+```typescript
+import { EasyConsent, Options, Mode } from '@primarix/easy-consent';
+
+const consentManager = new EasyConsent('YOUR-GA-ID');
+
+// Type-safe consent updates
+const updateConsent = (option: Options, mode: Mode) => {
+    consentManager.update(option, mode);
+};
+
+// Type-safe event handling
+window.addEventListener('consent-updated', (event: CustomEvent<{
+    key: Options;
+    mode: Mode;
+    state: Config;
+}>) => {
+    const { key, mode, state } = event.detail;
+    // Type-safe access to consent state
+    console.log(state.analytics_storage);
+});
+```
+
+## React Implementation
+
+Here's an example of how to implement the consent manager in a React application:
+
+```tsx
+import { useState } from "react";
+import { type Options, EasyConsent, Config, Mode } from "@primarix/easy-consent";
+
+// Props interface for the consent component
+export interface ConsentProps {
+    consent: EasyConsent
+}
+
+// Custom hook for managing consent choices
+const useUpdateChoices = (consent: EasyConsent) => {
+    const [choices, setChoices] = useState<Config>(consent.state);
+
+    const handleChoices = (key: Options, value: Mode) => {
+        return () => {
+            consent.update(key, value);
+            setChoices({...choices, [key]: value});
+        }
+    }
+
+    const changeMode = (mode: Mode) => mode === "granted" ? "denied" : "granted";
+
+    return { choices, handleChoices, changeMode };
+}
+
+// Consent component
+export const ConsentComponent: React.FC<ConsentProps> = ({ consent }) => {
+    const { choices, handleChoices, changeMode } = useUpdateChoices(consent);
+    
+    return (
+        <ul className='w-[320px] bg-gray-800 rounded p-2'>
+            {Object.keys(consent.state).map((item, index) => (
+                <li key={index} className='flex items-center justify-between p-2 bg-blac gap-0.5'>
+                    <p className='font-semibold text-white'>{item}</p>
+                    <button 
+                        onClick={handleChoices(item as Options, changeMode(choices[item as Options]))}
+                        className={`
+                            cursor-pointer transition-all duration-400 text-white w-[90px] 
+                            font-semibold p-1 rounded uppercase 
+                            ${choices[item as Options] === "denied" ? "bg-red-600" : "bg-green-600"}
+                        `}
+                    >
+                        {choices[item as Options]}
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+}
+```
+
+### Usage in your React application:
+
+```tsx
+import { EasyConsent } from '@primarix/easy-consent';
+import { ConsentComponent } from './ConsentComponent';
+
+// Initialize the consent manager
+const consentManager = new EasyConsent('YOUR-GA-ID');
+
+function App() {
+    
+
+    return (
+        <div>
+            <h1>Your App</h1>
+            <ConsentComponent consent={consentManager} />
+        </div>
+    );
+}
+```
+
+This implementation provides:
+- A reusable consent component
+- Type-safe consent management
+- Real-time UI updates when consent changes
+- Visual feedback for consent states
+- Proper state management using React hooks
+
+The component includes:
+- A custom hook (`useUpdateChoices`) for managing consent state
+- A toggle button for each consent option
+- Visual indicators for granted/denied states
+- Automatic state synchronization with the consent manager
+
+## Installation
+
+```bash
+npm install @primarix/easy-consent
+```
+
+## Usage
+
+```typescript
+import { EasyConsent } from '@primarix/easy-consent';
+
+// Initialize with your Google Analytics ID
+const consentManager = new EasyConsent('YOUR-GA-ID');
+
+// Update consent preferences
+consentManager.update('analytics_storage', 'granted');
+```
+
+## Default Configuration
+
+By default, all consent options are set to 'denied' for new users. The initial state is:
+
+```json
+{
+    "ad_storage": "denied",
+    "analytics_storage": "denied",
+    "functionality_storage": "denied",
+    "personalization_storage": "denied",
+    "ad_user_data": "denied",
+    "ad_personalization": "denied",
+    "security_storage": "denied"
+}
+```
+
+## Cookie Storage
+
+The consent configuration is stored in a cookie named `consentConfig` with the following characteristics:
+
+- **Name**: `consentConfig`
+- **Expiration**: 180 days for initial setup, 3 days for updates
+- **Security**: 
+  - `SameSite=Lax`
+  - `Secure` flag enabled
+- **Path**: Root path (`/`)
+- **Format**: JSON-encoded object containing all consent preferences
+
+## Updating Consent
+
+You can update consent preferences using the `update` method:
+
+```typescript
+// Grant consent for analytics
+consentManager.update('analytics_storage', 'granted');
+
+// Deny consent for ads
+consentManager.update('ad_storage', 'denied');
+```
+
+When analytics consent is granted, a page view event is automatically triggered.
+
+## Events
+
+The package dispatches a `consent-updated` event whenever consent preferences are changed:
+
+```javascript
+window.addEventListener('consent-updated', (event) => {
+    const { key, mode, state } = event.detail;
+    console.log('Consent updated:', { key, mode, state });
+});
+```
+
+## Consent Options
+
+The package supports the following consent options:
+
+- `ad_storage`
+- `analytics_storage`
+- `functionality_storage`
+- `personalization_storage`
+- `ad_user_data`
+- `ad_personalization`
+- `security_storage`
+
+## Security Features
+
+- Secure cookie handling with SameSite=Lax and Secure flags
+- Automatic data redaction for ads
+- URL passthrough enabled by default
+- JSON parsing error handling for cookie values
+
+## Beta Status
+
+This package is currently in beta testing. Features and implementation details may change without notice. Users are advised to:
+
+1. Test thoroughly in production environments, ensuring compliance with GDPR regulations and utilizing Google-provided tools for consent mode testing
+2. Monitor for updates and breaking changes
+
+
+## Contributing
+
+We welcome contributions! Please feel free to submit issues and pull requests.
+
+## License
+
+[MIT License](LICENSE)
