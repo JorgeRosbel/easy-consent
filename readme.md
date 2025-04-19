@@ -9,16 +9,15 @@ This software is provided "as is" and is currently in beta testing. The author m
 ## Features
 
 - Simple integration with Google Analytics
-- Cookie-based consent storage
-- Secure cookie handling with SameSite=Lax and Secure flags
-- Event-based consent updates
+- Cookie-based consent storage with secure handling (SameSite=Lax, Secure flags)
+- Event-based consent updates with timestamp support
 - Default consent state management
 - Automatic Google Analytics initialization
-- Full TypeScript support with type definitions
+- Full TypeScript support
 - Bulk consent management
-- Enhanced event system with timestamps
 - New user detection
 - Automatic page view tracking
+- Comprehensive error handling
 
 ## TypeScript Support
 
@@ -63,14 +62,6 @@ interface ConsentUpdateEvent extends CustomEvent {
 }
 ```
 
-These types ensure type safety when:
-- Initializing the consent manager
-- Updating consent preferences
-- Handling consent events
-- Working with the consent state
-- Managing bulk consent updates
-- Handling custom events
-
 ## Usage
 
 ### Basic Usage
@@ -112,12 +103,6 @@ window.addEventListener('consent-updated', (event) => {
 });
 ```
 
-The event detail includes:
-- `key`: The consent option that was updated or 'all' for bulk updates
-- `mode`: The new consent mode ('granted', 'denied', 'accept-all', or 'reject-all')
-- `state`: The complete current consent state
-- `timestamp`: Unix timestamp of when the update occurred
-
 ## Default Configuration
 
 By default, all consent options are set to 'denied' for new users. The initial state is:
@@ -134,7 +119,7 @@ By default, all consent options are set to 'denied' for new users. The initial s
 }
 ```
 
-## Cookie Storage
+## Storage and Security
 
 The consent configuration is stored in a cookie named `consentConfig` with the following characteristics:
 
@@ -146,6 +131,11 @@ The consent configuration is stored in a cookie named `consentConfig` with the f
 - **Path**: Root path (`/`)
 - **Format**: JSON-encoded object containing all consent preferences
 
+Additional security features:
+- Automatic data redaction for ads
+- URL passthrough enabled by default
+- JSON parsing error handling for cookie values
+
 ## Error Handling
 
 The package includes comprehensive error handling for:
@@ -153,30 +143,6 @@ The package includes comprehensive error handling for:
 - Google Analytics initialization errors
 - Consent update errors
 - Bulk operation errors
-
-## Security Features
-
-- Secure cookie handling with SameSite=Lax and Secure flags
-- Automatic data redaction for ads
-- URL passthrough enabled by default
-- JSON parsing error handling for cookie values
-
-## Beta Status
-
-This package is currently in beta testing. Features and implementation details may change without notice. Users are advised to:
-
-1. Test thoroughly in production environments
-2. Ensure compliance with GDPR regulations
-3. Utilize Google-provided tools for consent mode testing
-4. Monitor for updates and breaking changes
-
-## Contributing
-
-We welcome contributions! Please feel free to submit issues and pull requests.
-
-## License
-
-[MIT License](LICENSE)
 
 ## React Implementation
 
@@ -233,39 +199,22 @@ export const ConsentComponent: React.FC<ConsentProps> = ({ consent }) => {
 }
 ```
 
-### Usage in your React application:
+## Beta Status
 
-```tsx
-import { EasyConsent } from '@primarix/easy-consent';
-import { ConsentComponent } from './ConsentComponent';
+This package is currently in beta testing. Features and implementation details may change without notice. Users are advised to:
 
-// Initialize the consent manager
-const consentManager = new EasyConsent('YOUR-GA-ID');
+1. Test thoroughly in production environments
+2. Ensure compliance with GDPR regulations
+3. Utilize Google-provided tools for consent mode testing
+4. Monitor for updates and breaking changes
 
-function App() {
-    
+## Contributing
 
-    return (
-        <div>
-            <h1>Your App</h1>
-            <ConsentComponent consent={consentManager} />
-        </div>
-    );
-}
-```
+We welcome contributions! Please feel free to submit issues and pull requests.
 
-This implementation provides:
-- A reusable consent component
-- Type-safe consent management
-- Real-time UI updates when consent changes
-- Visual feedback for consent states
-- Proper state management using React hooks
+## License
 
-The component includes:
-- A custom hook (`useUpdateChoices`) for managing consent state
-- A toggle button for each consent option
-- Visual indicators for granted/denied states
-- Automatic state synchronization with the consent manager
+[MIT License](LICENSE)
 
 ## Additional Features
 
@@ -334,10 +283,3 @@ When analytics consent is granted, the package automatically tracks page views w
 - Current page path
 - Page title
 - Timestamp
-
-### Error Handling
-
-The package includes improved error handling for:
-- Cookie parsing errors
-- Google Analytics initialization errors
-- Consent update errors
