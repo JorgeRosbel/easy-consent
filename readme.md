@@ -15,6 +15,10 @@ This software is provided "as is" and is currently in beta testing. The author m
 - Default consent state management
 - Automatic Google Analytics initialization
 - Full TypeScript support with type definitions
+- Bulk consent management
+- Enhanced event system with timestamps
+- New user detection
+- Automatic page view tracking
 
 ## TypeScript Support
 
@@ -35,8 +39,28 @@ interface Config {
     security_storage: Mode
 }
 
+// Partial configuration for selective updates
+type PartialConfig = Partial<Config>
+
 // Type for consent options (keys of Config interface)
 type Options = keyof Config
+
+// Event types for consent updates
+type ConsentEventKey = Options | 'all'
+type ConsentEventMode = Mode | 'accept-all' | 'reject-all'
+
+// Event detail interface
+interface ConsentUpdateEventDetail {
+    key: ConsentEventKey
+    mode: ConsentEventMode
+    state: Config
+    timestamp: string
+}
+
+// Custom event interface
+interface ConsentUpdateEvent extends CustomEvent {
+    detail: ConsentUpdateEventDetail
+}
 ```
 
 These types ensure type safety when:
@@ -44,30 +68,115 @@ These types ensure type safety when:
 - Updating consent preferences
 - Handling consent events
 - Working with the consent state
+- Managing bulk consent updates
+- Handling custom events
 
-Example usage with TypeScript:
+## Usage
+
+### Basic Usage
 
 ```typescript
-import { EasyConsent, Options, Mode } from '@primarix/easy-consent';
+import { EasyConsent } from '@primarix/easy-consent';
 
+// Initialize with your Google Analytics ID
 const consentManager = new EasyConsent('YOUR-GA-ID');
 
-// Type-safe consent updates
-const updateConsent = (option: Options, mode: Mode) => {
-    consentManager.update(option, mode);
-};
+// Update single consent preference
+consentManager.update('analytics_storage', 'granted');
 
-// Type-safe event handling
-window.addEventListener('consent-updated', (event: CustomEvent<{
-    key: Options;
-    mode: Mode;
-    state: Config;
-}>) => {
-    const { key, mode, state } = event.detail;
-    // Type-safe access to consent state
-    console.log(state.analytics_storage);
+// Update multiple consent preferences
+consentManager.updateMultiple({
+    analytics_storage: 'granted',
+    ad_storage: 'denied',
+    functionality_storage: 'granted'
+});
+
+// Bulk consent management
+consentManager.acceptAll();  // Grant all consent options
+consentManager.rejectAll();  // Deny all consent options
+
+// Check consent state
+const allGranted = consentManager.isAllConsented();
+const allDenied = consentManager.isAllDenied();
+
+// Check if user is new
+console.log(consentManager.isNewUser); // true for new users, false for returning users
+```
+
+### Event Handling
+
+```typescript
+window.addEventListener('consent-updated', (event) => {
+    const { key, mode, state, timestamp } = event.detail;
+    console.log('Consent updated:', { key, mode, state, timestamp });
 });
 ```
+
+The event detail includes:
+- `key`: The consent option that was updated or 'all' for bulk updates
+- `mode`: The new consent mode ('granted', 'denied', 'accept-all', or 'reject-all')
+- `state`: The complete current consent state
+- `timestamp`: Unix timestamp of when the update occurred
+
+## Default Configuration
+
+By default, all consent options are set to 'denied' for new users. The initial state is:
+
+```json
+{
+    "ad_storage": "denied",
+    "analytics_storage": "denied",
+    "functionality_storage": "denied",
+    "personalization_storage": "denied",
+    "ad_user_data": "denied",
+    "ad_personalization": "denied",
+    "security_storage": "denied"
+}
+```
+
+## Cookie Storage
+
+The consent configuration is stored in a cookie named `consentConfig` with the following characteristics:
+
+- **Name**: `consentConfig`
+- **Expiration**: 180 days for initial setup, 3 days for updates
+- **Security**: 
+  - `SameSite=Lax`
+  - `Secure` flag enabled
+- **Path**: Root path (`/`)
+- **Format**: JSON-encoded object containing all consent preferences
+
+## Error Handling
+
+The package includes comprehensive error handling for:
+- Cookie parsing errors
+- Google Analytics initialization errors
+- Consent update errors
+- Bulk operation errors
+
+## Security Features
+
+- Secure cookie handling with SameSite=Lax and Secure flags
+- Automatic data redaction for ads
+- URL passthrough enabled by default
+- JSON parsing error handling for cookie values
+
+## Beta Status
+
+This package is currently in beta testing. Features and implementation details may change without notice. Users are advised to:
+
+1. Test thoroughly in production environments
+2. Ensure compliance with GDPR regulations
+3. Utilize Google-provided tools for consent mode testing
+4. Monitor for updates and breaking changes
+
+## Contributing
+
+We welcome contributions! Please feel free to submit issues and pull requests.
+
+## License
+
+[MIT License](LICENSE)
 
 ## React Implementation
 
@@ -157,112 +266,6 @@ The component includes:
 - A toggle button for each consent option
 - Visual indicators for granted/denied states
 - Automatic state synchronization with the consent manager
-
-## Installation
-
-```bash
-npm install @primarix/easy-consent
-```
-
-## Usage
-
-```typescript
-import { EasyConsent } from '@primarix/easy-consent';
-
-// Initialize with your Google Analytics ID
-const consentManager = new EasyConsent('YOUR-GA-ID');
-
-// Update consent preferences
-consentManager.update('analytics_storage', 'granted');
-```
-
-## Default Configuration
-
-By default, all consent options are set to 'denied' for new users. The initial state is:
-
-```json
-{
-    "ad_storage": "denied",
-    "analytics_storage": "denied",
-    "functionality_storage": "denied",
-    "personalization_storage": "denied",
-    "ad_user_data": "denied",
-    "ad_personalization": "denied",
-    "security_storage": "denied"
-}
-```
-
-## Cookie Storage
-
-The consent configuration is stored in a cookie named `consentConfig` with the following characteristics:
-
-- **Name**: `consentConfig`
-- **Expiration**: 180 days for initial setup, 3 days for updates
-- **Security**: 
-  - `SameSite=Lax`
-  - `Secure` flag enabled
-- **Path**: Root path (`/`)
-- **Format**: JSON-encoded object containing all consent preferences
-
-## Updating Consent
-
-You can update consent preferences using the `update` method:
-
-```typescript
-// Grant consent for analytics
-consentManager.update('analytics_storage', 'granted');
-
-// Deny consent for ads
-consentManager.update('ad_storage', 'denied');
-```
-
-When analytics consent is granted, a page view event is automatically triggered.
-
-## Events
-
-The package dispatches a `consent-updated` event whenever consent preferences are changed:
-
-```javascript
-window.addEventListener('consent-updated', (event) => {
-    const { key, mode, state } = event.detail;
-    console.log('Consent updated:', { key, mode, state });
-});
-```
-
-## Consent Options
-
-The package supports the following consent options:
-
-- `ad_storage`
-- `analytics_storage`
-- `functionality_storage`
-- `personalization_storage`
-- `ad_user_data`
-- `ad_personalization`
-- `security_storage`
-
-## Security Features
-
-- Secure cookie handling with SameSite=Lax and Secure flags
-- Automatic data redaction for ads
-- URL passthrough enabled by default
-- JSON parsing error handling for cookie values
-
-## Beta Status
-
-This package is currently in beta testing. Features and implementation details may change without notice. Users are advised to:
-
-1. Test thoroughly in production environments, ensuring compliance with GDPR regulations and utilizing Google-provided tools for consent mode testing
-2. Monitor for updates and breaking changes
-
-
-## Contributing
-
-We welcome contributions! Please feel free to submit issues and pull requests.
-
-## License
-
-[MIT License](LICENSE)
 
 ## Additional Features
 
