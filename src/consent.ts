@@ -153,7 +153,9 @@ export class EasyConsent {
 
         try {
             if (!window.dataLayer) throw new Error("The gtag function is not defined");
-            Object.fromEntries(Object.keys(this.state).map(key => [key,"granted"]))
+            const v1 = Object.keys(this.state) as Options[];
+            const v2 = v1.map((key) => [key ,"granted"]) 
+            this.state = Object.fromEntries(v2) 
             window.gtag("consent", "update", this.state);
             this.setCookie("consentConfig", this.state, this.consentConfigDuration)
             this.pageView();
@@ -169,7 +171,9 @@ export class EasyConsent {
     rejectAll(){
         try{
             if(!window.dataLayer) throw new Error("The gtag function is not defined");
-            Object.fromEntries(Object.keys(this.state).map(key => [key,"denied"]))
+            const v1 = Object.keys(this.state) as Options[];
+            const v2 = v1.map((key) => [key ,"denied"]) 
+            this.state = Object.fromEntries(v2) 
             window.gtag("consent", "update", this.state);
             this.setCookie("consentConfig", this.state ,this.consentConfigDuration)
             this.dispatchCustomEvent("all","reject-all");
