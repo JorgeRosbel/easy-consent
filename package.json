@@ -9,10 +9,25 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup src/index.ts --format esm,cjs --dts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "google analytics",
+    "consent management",
+    "consent mode",
+    "cookie storage",
+    "typescript support",
+    "javascript library"
+  ],
+  "author": "jorge",
+  "license": "MIT",
   "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JorgeRosbel/easy-consent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JorgeRosbel/easy-consent/issues"
+  },
+  "homepage": "https://github.com/JorgeRosbel/easy-consent#readme",
   "devDependencies": {
     "eslint": "^9.24.0",
     "prettier": "^3.5.3",
