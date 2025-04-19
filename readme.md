@@ -263,3 +263,78 @@ We welcome contributions! Please feel free to submit issues and pull requests.
 ## License
 
 [MIT License](LICENSE)
+
+## Additional Features
+
+### Bulk Consent Management
+
+The package now includes methods for managing consent in bulk:
+
+```typescript
+// Accept all consent options
+consentManager.acceptAll();
+
+// Reject all consent options
+consentManager.rejectAll();
+
+// Check if all options are granted
+const allGranted = consentManager.isAllConsented();
+
+// Check if all options are denied
+const allDenied = consentManager.isAllDenied();
+
+// Update multiple consent options at once
+consentManager.updateMultiple({
+    analytics_storage: 'granted',
+    ad_storage: 'denied',
+    functionality_storage: 'granted'
+});
+```
+
+The `updateMultiple` method allows you to update several consent options simultaneously with a single call. It:
+- Updates the internal state
+- Updates Google Analytics consent
+- Updates the cookie
+- Dispatches individual events for each updated option
+- Triggers a page view if analytics consent is granted
+- Handles errors gracefully
+
+### Enhanced Event System
+
+The consent system now includes a more detailed event system with timestamp information:
+
+```typescript
+window.addEventListener('consent-updated', (event) => {
+    const { key, mode, state, timestamp } = event.detail;
+    console.log('Consent updated:', { key, mode, state, timestamp });
+});
+```
+
+The event detail includes:
+- `key`: The consent option that was updated
+- `mode`: The new consent mode ('granted' or 'denied')
+- `state`: The complete current consent state
+- `timestamp`: Unix timestamp of when the update occurred
+
+### New User Detection
+
+The package now tracks whether a user is new or returning:
+
+```typescript
+const consentManager = new EasyConsent('YOUR-GA-ID');
+console.log(consentManager.isNewUser); // true for new users, false for returning users
+```
+
+### Automatic Page View Tracking
+
+When analytics consent is granted, the package automatically tracks page views with:
+- Current page path
+- Page title
+- Timestamp
+
+### Error Handling
+
+The package includes improved error handling for:
+- Cookie parsing errors
+- Google Analytics initialization errors
+- Consent update errors

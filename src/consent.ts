@@ -1,9 +1,22 @@
-import { type Mode, type Options, Config } from "./types";
+import { type Mode, 
+    type Options, 
+    Config, 
+    type ConsentEventKey, 
+    type ConsentEventMode, 
+    ConsentUpdateEventDetail, 
+    ConsentUpdateEvent,
+    type PartialConfig } from "./types";
 
 declare global {
     interface Window {
         dataLayer: any[];
         gtag: (...args: any[]) => void;
+    }
+}
+
+declare global {
+    interface WindowEventMap {
+        'consent-updated': ConsentUpdateEvent;
     }
 }
 
@@ -14,10 +27,12 @@ export class EasyConsent {
     private analytics_lib:HTMLElement
     private init_consent:HTMLElement
     private init_GA:HTMLElement
+    private consentConfigDuration = 180;
 
 
     private getCookie(name: string) {
 
+    
         const cookies = document.cookie.split("; ");
         for (let cookie of cookies) {
             const [key, value] = cookie.split("=");
@@ -63,7 +78,7 @@ export class EasyConsent {
                 'ad_personalization': 'denied',
                 'security_storage': 'denied'     
             }
-            this.setCookie("consentConfig", this.state , 180)
+            this.setCookie("consentConfig", this.state , this.consentConfigDuration)
         }
 
 
@@ -105,25 +120,86 @@ export class EasyConsent {
 
     }
 
-
-
-    update(key:Options, mode:Mode){
-        if(!window.dataLayer) throw new Error("La funcion gtag no esta definida");
-
-        this.state = {...this.state, [key]: mode}
-        this.setCookie("consentConfig", this.state ,3)
-        window.gtag("consent", "update", { [key]: mode });
-
-
-        if (key === 'analytics_storage' && mode === 'granted') {
+    private pageView(){
+        if (this.state.analytics_storage === 'granted') {
             window.gtag('event', 'page_view', {
                 page_path: window.location.pathname,
                 page_title: document.title,
             });
         }
+    }
 
-        const event = new CustomEvent('consent-updated', { detail: { key, mode, state: this.state } });
+    private dispatchCustomEvent(key:ConsentEventKey,mode:ConsentEventMode){
+        const event = new CustomEvent<ConsentUpdateEventDetail>('consent-updated', {
+             detail: { key, mode, state: this.state, timestamp: Date.now().toString()} });
         window.dispatchEvent(event);
+    }
+
+
+
+    update(key:Options, mode:Mode){
+        if(!window.dataLayer) throw new Error("The gtag function is not defined");
+
+        this.state = {...this.state, [key]: mode}
+        this.setCookie("consentConfig", this.state ,this.consentConfigDuration)
+        window.gtag("consent", "update", { [key]: mode });
+
+        this.pageView();
+        this.dispatchCustomEvent(key,mode);
+
+    }
+
+    acceptAll() {
+
+        try {
+            if (!window.dataLayer) throw new Error("The gtag function is not defined");
+            Object.fromEntries(Object.keys(this.state).map(key => [key,"granted"]))
+            window.gtag("consent", "update", this.state);
+            this.setCookie("consentConfig", this.state, this.consentConfigDuration)
+            this.pageView();
+            this.dispatchCustomEvent("all","accept-all");
+
+        }
+        catch (error) {
+            console.error("Error in acceptAll:", error);
+        }
+
+    }
+
+    rejectAll(){
+        try{
+            if(!window.dataLayer) throw new Error("The gtag function is not defined");
+            Object.fromEntries(Object.keys(this.state).map(key => [key,"denied"]))
+            window.gtag("consent", "update", this.state);
+            this.setCookie("consentConfig", this.state ,this.consentConfigDuration)
+            this.dispatchCustomEvent("all","reject-all");
+        }
+        catch(error){
+            console.error("Error in rejectAll:", error)
+        }
+    }
+
+    isAllConsented(): boolean {
+        return Object.values(this.state).every(value => value === 'granted');
+    }
+    
+    isAllDenied(): boolean {
+        return Object.values(this.state).every(value => value === 'denied');
+    }
+
+    updateMultiple(new_state:PartialConfig){
+        try{
+            this.state = {...this.state,...new_state}
+            window.gtag("consent", "update", new_state);
+            this.setCookie("consentConfig", this.state ,this.consentConfigDuration)
+            Object.entries(new_state).forEach(([key, mode]) => {
+                this.dispatchCustomEvent(key as Options, mode as Mode);
+            });
+            this.pageView();
+        }
+        catch(error){
+            console.error("Error in updateMultiple:", error)
+        }
     }
 
 
