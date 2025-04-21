@@ -1,6 +1,6 @@
 {
   "name": "@primarix/easy-consent",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A lightweight consent management solution for Google Analytics and related services. This is a beta version and should be used with caution.",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
