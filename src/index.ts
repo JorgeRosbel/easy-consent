@@ -1,2 +1,4 @@
-export {EasyConsent} from "./consent"
-export * from "./types"
+// Export core functionality
+export * from './consent'
+export * from './types'
+

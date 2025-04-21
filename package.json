@@ -5,9 +5,18 @@
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./reactHooks": {
+      "import": "./dist/reactHooks/index.mjs",
+      "require": "./dist/reactHooks/index.cjs"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsup src/index.ts --format esm,cjs --dts"
+    "build": "tsup src/index.ts src/reactHooks/index.ts --format esm,cjs --dts"
   },
   "keywords": [
     "google analytics",
@@ -28,9 +37,20 @@
     "url": "https://github.com/JorgeRosbel/easy-consent/issues"
   },
   "homepage": "https://github.com/JorgeRosbel/easy-consent#readme",
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types-react": "^18.2.0",
     "eslint": "^9.24.0",
     "prettier": "^3.5.3",
+    "react": "^18.2.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
   }

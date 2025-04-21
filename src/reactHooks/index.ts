@@ -1,0 +1,1 @@
+export {useConsent} from "./useConsent"
